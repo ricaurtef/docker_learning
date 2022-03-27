@@ -1,0 +1,36 @@
+---
+- name: Setting Up a Private Registry.
+  hosts: localhost
+  connection: local
+
+
+  vars:
+    basic_registry_repo: https://github.com/spkane/basic-registry
+    dest_dir: '{{ ansible_env.PWD }}/{{ basic_registry_repo | basename }}'
+
+
+  pre_tasks:
+    - name: Configure git to handle line endings.
+      community.general.git_config:
+        name: core.autocrlf
+        value: input
+        scope: global
+        state: present
+
+
+  tasks:
+    - name: Clone the repository that contains the files required.
+      ansible.builtin.git:
+        repo: '{{ basic_registry_repo }}'
+        dest: '{{ dest_dir }}'
+      register: git_repo
+
+    - name: Rename sample files.
+      ansible.builtin.shell:
+        cmd: >
+          for filename in *.sample; do
+              cp $filename ${filename%%.sample};
+           done
+        chdir: '{{ dest_dir }}'
+      when: git_repo is changed
+...
